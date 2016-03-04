@@ -44,6 +44,6 @@ create_random_traj <- function(xyt,V,tinterval){
   allpoints<-SpatialPointsDataFrame(xy[order(time),],data=as.data.frame(c(time[order(time)])))
   names(allpoints)<- 'tspannum'
   allpoints<-spRbind(allpoints,xyt[length(xyt),])
-
+  
   return(allpoints)
 }

@@ -1,14 +1,15 @@
-LineDensityRaster <- function(listOfSpatialPointsDF,cellfactor){
+LineDensityRaster <- function(listOfSpatialPointsDF,cellsize){
   #' Standardise values
   #'      Arg:
   #'          ListOfSpatialPointsDF(list): A list of SpatialPointsDataframes containing the coordinates of the points, thus the paths, between given points.
+  #'          cellsize(number): The cellsize (in meters) of the output.
   #'      Return:
-  #'        	A raster containing the amount of lines per cell(SpatialPointsDataFrame) 
+  #'        	A raster containing the amount of lines per cell(Raster) 
   
   
   
   
-  # convert the spPointsDF to a spLinesDF
+  # convert the spPointsDF to a spLines
   pathList <- c()
   iterations <- 0
   
@@ -20,8 +21,6 @@ LineDensityRaster <- function(listOfSpatialPointsDF,cellfactor){
     pathList <- c(pathList, line_sp)
   }
   
-  
-  # Rtrajectories[[1]]@proj4string
   
   # specify output extent based on input extents
   outRasterExtent <- vector()
@@ -50,16 +49,16 @@ LineDensityRaster <- function(listOfSpatialPointsDF,cellfactor){
   
   # empty Line Density Raster
   LineDensity <- raster(outRasterExtent, crs = projection(pathList[1]), vals=0, 
-                        ncols=(outRasterExtent[2]/cellfactor) - (outRasterExtent[1]/cellfactor), #xmax - xmin
-                        nrows=(outRasterExtent[4]/cellfactor) - (outRasterExtent[3]/cellfactor)) #ymax - ymin
+                        ncols=(outRasterExtent[2]/cellsize) - (outRasterExtent[1]/cellsize), #xmax - xmin
+                        nrows=(outRasterExtent[4]/cellsize) - (outRasterExtent[3]/cellsize)) #ymax - ymin
   
   # create raster
   for(i in pathList){
     
     # create single raster per line
     singleRaster <- raster(outRasterExtent, crs = projection(i), vals=0,
-                           ncols=(outRasterExtent[2]/cellfactor) - (outRasterExtent[1]/cellfactor), #xmax - xmin
-                           nrows=(outRasterExtent[4]/cellfactor) - (outRasterExtent[3]/cellfactor)) #ymax - ymin
+                           ncols=(outRasterExtent[2]/cellsize) - (outRasterExtent[1]/cellsize), #xmax - xmin
+                           nrows=(outRasterExtent[4]/cellsize) - (outRasterExtent[3]/cellsize)) #ymax - ymin
     
     singleRaster <- rasterize(i, singleRaster, fun='count', background=0)
     

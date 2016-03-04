@@ -4,7 +4,7 @@ maxspeed2009 <- function(data,bearname){
   #'          bearname(str): name of the bear
   #'      Return:
   #'        	max speed of bear
-
+  
   bear <- subset(data, PubName==bearname)
   
   n <- nrow(bear)
@@ -18,6 +18,7 @@ maxspeed2009 <- function(data,bearname){
   mspeed<-max(speed)
   return(mspeed)
 }
+
 
 
 
