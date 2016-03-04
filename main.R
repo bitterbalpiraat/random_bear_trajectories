@@ -1,4 +1,3 @@
-
 ## Mini project Advanced GI Science for Earth and Environment
 ## Period 4, Academic Year 2015-2016
 ## Case 1 - Random Animal Trajectories
@@ -20,6 +19,7 @@ source('Functions/create_random_traj.R')
 source('Functions/maxspeed2009.R')
 source('Functions/getbeardata.R')
 source('Functions/LineDensityRaster.R')
+source('Functions/EncounterProbabilityRaster.R')
 ## Create directories
 data_dir = 'Data'
 output_dir = 'Output'
@@ -38,7 +38,7 @@ DEM<- readGDAL("Data/DEM.tif")
 data2007 <- read.table("Data/August2007.txt", header = T, sep=",")
 data2007$GMT_date <- NULL
 data2007$LMT_date <- as.POSIXct(data2007$LMT_date, 
-                                  format='%d-%m-%Y %H:%M:%S')
+                                format='%d-%m-%Y %H:%M:%S')
 
 
 Koski2007 <- subset(data2007, PubName == "Koski (2310)")
@@ -60,10 +60,10 @@ mypoints<-Krut2009
 #mypoints<-subset(mypoints,tspannum>450 & tspannum<700)
 mypoints<-subset(mypoints,tspannum>690 & tspannum<700)
 ## Compute random trajectories
-V=mspeedKrut*1000+100
+V<-mspeedKrut*1000+100
 Rtrajectories<-list()
 
-for (i in seq(1:100)){
+for (i in seq(1:10)){
   
   Rtrajectory<-create_random_traj(mypoints,V,4)
   Rtrajectories<-c(Rtrajectories,Rtrajectory)
@@ -77,14 +77,139 @@ plot(mypoints,col='blue',xlim=c(bbox(mypoints)[1][1]-(V/5),bbox(mypoints)[,2][1]
      main='Random trajectory between known points')
 lapply(Rtrajectories,function(x) lines(x[1]@coords,add=T,col='red'))
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #plot(mypoints,add=T,col='blue')
 ## Create line density surface of trajectories 
-LineDensity <- LineDensityRaster(Rtrajectories,500)
+system.time(LineDensity <- LineDensityRaster(Rtrajectories,500))
+
 
 plot(LineDensity, col=colorRampPalette(c("white", "orangered", "black"))(101))
-plot(mypoints,add=T,pch=19,col='yellow')
-lapply(Rtrajectories,function(x) lines(x[1]@coords,add=T,col=rgb(0,0,0,alpha=0.15)))
-## Evaluate results
+lapply(Rtrajectories,function(x) lines(x[1]@coords,add=T,col=rgb(0,1,0,alpha=0.1)))
+plot(mypoints,add=T,pch=19,col='white')
+lapply(Rtrajectories,function(x) lines(x[1]@coords,add=T,col=rgb(0,1,0,alpha=0.025)))
 
-## Visualize results
 
+
+
+
+
+# system.time(Probability <- EncounterProbabilityRaster(Rtrajectories1, Rtrajectories2, 50))
+# plot(Probability, col=colorRampPalette(c("lightyellow", "orangered", "black"))(101))
+# 
+# lapply(Rtrajectories_A,function(x) lines(x[1]@coords,add=T,col=rgb(0,1,0,alpha=0.1)))
+# lapply(Rtrajectories_B,function(x) lines(x[1]@coords,add=T,col=rgb(1,0,0,alpha=0.1)))
+# 
+# plot(mypoints_A,add=T,pch=19,col='white')
+# plot(mypoints_B,add=T,pch=19,col='yellow')
+
+
+
+
+
+## PROBABILITY
+load('data/all1equi.Rdata')
+load('data/allgood1.Rdata')
+load('data/all2equi.Rdata')
+load('data/allgood2.Rdata')
+
+
+# comparison 1: use n of 3 or 4
+n1 <- 1
+
+equi1_extent <- extent(all1_equi[[n1]])
+good1_extent <- extent(allgood1[[n1]])
+output_extent <- extent( min(equi1_extent[1], good1_extent[1]) ,
+                         max(equi1_extent[2], good1_extent[2]) ,
+                         min(equi1_extent[3], good1_extent[3]) ,
+                         max(equi1_extent[4], good1_extent[4]))
+
+# plot(all1_equi[[n1]]@coords, xlim=c(output_extent[1], output_extent[2]), ylim=c(output_extent[3], output_extent[4]))
+# plot(allgood1[[n1]]@coords, xlim=c(output_extent[1], output_extent[2]), ylim=c(output_extent[3], output_extent[4]))
+
+
+
+
+# comparison 2: use n of 2 or 3
+n2 <- 2
+
+equi2_extent <- extent(all2_equi[[n2]])
+good2_extent <- extent(allgood2[[n2]])
+output_extent <- extent( min(equi2_extent[1], good2_extent[1]) ,
+                         max(equi2_extent[2], good2_extent[2]) ,
+                         min(equi2_extent[3], good2_extent[3]) ,
+                         max(equi2_extent[4], good2_extent[4]))
+
+
+# get probability map
+Rtrajectories<-list()
+
+# A
+for (i in seq(1:200)){
+  Rtrajectory<-create_random_traj(allgood2[[n2]],V,1)
+  Rtrajectories<-c(Rtrajectories,Rtrajectory)
+}
+Rtrajectories_A <- Rtrajectories
+Rtrajectories<-list()
+
+# B
+for (i in seq(1:200)){
+  Rtrajectory<-create_random_traj(all2_equi[[n2]],V,1)
+  Rtrajectories<-c(Rtrajectories,Rtrajectory)
+}
+Rtrajectories_B <- Rtrajectories
+
+ProbabilityRaster <- EncounterProbabilityRaster(Rtrajectories_A, Rtrajectories_B, 50)
+
+
+# visualize the probability raster
+t <- ProbabilityRaster
+t[t < 0.075] <- NA
+
+plot(t, col=colorRampPalette(c("snow", "orangered", "black"))(101), 
+     ylab="Y (meters)",
+     xlab="X (meters)",
+     main="Probability (%) of an encounter between Koski and Grivla", 
+     sub=mtext("between 2007-08-11 21:00 and 2007-08-11 22:00"))
+
+plot(allgood2[[2]],add=T,pch=19,col='royalblue', cex=1.25)
+plot(all2_equi[[2]],add=T,pch=19,col='limegreen', cex=1.25)
+
+legend( "bottomright", 
+        legend=c("Koski","Grivla"),
+        col=c("royalblue","limegreen"),lwd = 1, lty=c(NA,NA), 
+        pch=c(19,19) )
+
+# visualize the random trajectories
+
+plot(t, col=colorRampPalette(c("white"))(101), 
+     ylab="Y (meters)",
+     xlab="X (meters)",
+     main="Random trajectories between known points of Koski and Grivla")
+plot(allgood2[[2]],add=T,pch=19,col='royalblue', cex=1.25)
+plot(all2_equi[[2]],add=T,pch=19,col='limegreen', cex=1.25)
+
+lapply(Rtrajectories1,function(x) lines(x[1]@coords,add=T,col=rgb(0,1,0,alpha=0.045)))
+lapply(Rtrajectories2,function(x) lines(x[1]@coords,add=T,col=rgb(0,0,1,alpha=0.045)))
+legend( "bottomright", 
+        legend=c("Koski","Grivla"),
+        col=c("royalblue","limegreen"),lwd = 1, lty=c(NA,NA), 
+        pch=c(19,19) )
